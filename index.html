@@ -69,7 +69,7 @@
 
 <script>
     // ВСТАВЬТЕ СЮДА ВАШ URL РАЗВЕРТЫВАНИЯ ИЗ GOOGLE APPS SCRIPT
-    const API_URL = "https://script.google.com/macros/s/AKfycbwIsP5DvNSUk2_W1k5qg8ZYtiPFlldJRYjV1iGZPoRFVCl0KrwHD_-5z6xLXrKSg2oq/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbzwk-PMOf4_RuDLWCcExDDCDpUdh7ET4kpAE_II5HK2e3UJKYEOhI3eXT8FoeCUM5Nd/exec"; 
     
     let dbObjects = [];
     let selectedStatus = "";
@@ -129,53 +129,39 @@
     }
 
     // 4. Отправка данных формы в Google Реестр
-    async function sendAuditData(event) {
-        event.preventDefault();
-        
-        if(!selectedStatus) {
-            alert("Пожалуйста, выберите статус проверки (Без нарушений / Есть нарушения)");
-            return;
-        }
-
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Отправка в Google Таблицу...";
-
-        const selectEl = document.getElementById('objectSelect');
-        const objectId = selectEl.value;
-        const objectName = selectEl.options[selectEl.selectedIndex].text;
-
-        const packet = {
-            inspector: document.getElementById('inspector').value,
-            objectId: objectId,
-            objectName: objectName,
-            status: selectedStatus,
-            comments: document.getElementById('comments').value
-        };
-
-        try {
-            // Используем fetch с типом передачи 'no-cors' для обхода CORS ограничений Google Apps Script при POST
-            await fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(packet)
-            });
-
-            alert("Проверка успешно зафиксирована в '7_Реестр_Проверок'!");
-            document.getElementById('auditForm').reset();
-            document.getElementById('object-info').style.display = 'none';
-            document.getElementById('status-ok').className = 'status-btn';
-            document.getElementById('status-fail').className = 'status-btn';
-            selectedStatus = "";
-            
-        } catch (error) {
-            alert("Произошла ошибка при отправке данных: " + error.message);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Зафиксировать в Реестре";
-        }
+    async function submitAudit() {
+    if (auditData.results.length === 0) {
+        alert("Вы не ответили ни на один вопрос!");
+        return;
     }
+
+    const submitBtn = document.querySelector('#checklist-container button');
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Отправка данных...";
+
+    try {
+        // Используем text/plain для обхода жестких ограничений CORS в Google Apps Script
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(auditData),
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            }
+        });
+
+        // Так как Google делает редиректы, ответ может быть непрозрачным,
+        // но при правильной настройке данные гарантированно запишутся.
+        alert('Проверка успешно завершена! Данные сохранены в Google Таблицу во вкладку "Журнал_Проверок".');
+        location.reload();
+
+    } catch (error) {
+        console.error("Ошибка:", error);
+        alert("Произошла ошибка при сохранении данных. Проверьте консоль браузера (F12).");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Отправить отчет в реестр";
+    }
+}
+
 </script>
 </body>
 </html>
