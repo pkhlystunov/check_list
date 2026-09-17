@@ -3,165 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Реестр проверок ОТиПБ</title>
+    <title>Инспекция по Охране Труда</title>
     <style>
         :root {
-            --primary: #2c3e50;
+            --primary: #34495e;
             --success: #2ecc71;
             --danger: #e74c3c;
-            --bg: #f5f6fa;
+            --gray: #bdc3c7;
+            --bg: #f4f6f9;
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { text-align: center; color: var(--primary); margin-top: 0; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: #555; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccd1d9; border-radius: 6px; box-sizing: border-box; font-size: 15px; transition: 0.3s; }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 5px rgba(44, 62, 80, 0.2); }
-        .status-options { display: flex; gap: 15px; margin-top: 5px; }
-        .status-btn { flex: 1; padding: 12px; border: 2px solid #ccd1d9; border-radius: 6px; background: white; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; }
-        .status-btn.active-success { background: var(--success); color: white; border-color: var(--success); }
-        .status-btn.active-danger { background: var(--danger); color: white; border-color: var(--danger); }
-        .submit-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .submit-btn:hover { background: #34495e; }
-        .submit-btn:disabled { background: #95a5a6; cursor: not-allowed; }
-        .loading { text-align: center; color: #7f8c8d; font-style: italic; }
-        #object-info { background: #edf2f7; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 13px; display: none; line-height: 1.4; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 20px; background: var(--bg); color: #333; margin: 0; }
+        .container { max-width: 650px; margin: 0 auto; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--gray); transition: all 0.2s ease; }
+        input[type="text"] { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid var(--gray); border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--gray) !important; cursor: not-allowed; }
+        .btn-success { background: var(--success); color: white; margin-right: 10px; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; padding: 14px; font-size: 16px; }
+        .comment-box { display: none; margin-top: 12px; }
+        .badge { display: inline-block; background: #e8edf2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 8px; }
+        .normative-text { font-size: 13px; color: #7f8c8d; margin-top: 8px; background: #fafafa; padding: 8px; border-radius: 4px; border-left: 3px solid #3498db; }
+        .loading { text-align: center; font-style: italic; color: #7f8c8d; padding: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Новая проверка ОТиПБ</h2>
-    <div id="loader" class="loading">Загрузка актуального списка объектов из таблицы...</div>
-
-    <form id="auditForm" style="display: none;" onsubmit="sendAuditData(event)">
+    <h2>📋 Контроль Охраны Труда</h2>
+    
+    <!-- Форма авторизации инспектора -->
+    <div id="setup-form" class="card" style="border-left-color: var(--primary);">
+        <label for="inspector"><b>ФИО Проверяющего:</b></label>
+        <input type="text" id="inspector" placeholder="Иванов Иван Иванович">
         
-        <div class="form-group">
-            <label for="inspector">ФИО Инспектора</label>
-            <input type="text" id="inspector" placeholder="Введите ваше имя" required>
-        </div>
+        <label for="facility"><b>Подразделение / Объект проверки:</b></label>
+        <input type="text" id="facility" placeholder="Цех №1, Склад ГСМ и т.д.">
+        
+        <button onclick="startAudit()" class="btn btn-primary">Начать аудит</button>
+    </div>
 
-        <div class="form-group">
-            <label for="objectSelect">Выберите объект проверки</label>
-            <select id="objectSelect" onchange="showObjectDetails()" required>
-                <option value="">-- Выберите из списка --</option>
-            </select>
-            <div id="object-info"></div>
-        </div>
-
-        <div class="form-group">
-            <label>Результат контроля</label>
-            <div class="status-options">
-                <div id="status-ok" class="status-btn" onclick="setStatus('Нарушений не обнаружено', 'ok')">Без нарушений</div>
-                <div id="status-fail" class="status-btn" onclick="setStatus('Выявлены нарушения', 'fail')">Есть нарушения</div>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="comments">Замечания / Комментарии</label>
-            <textarea id="comments" rows="4" placeholder="Опишите выявленные нарушения, укажите пункты правил или номера предписаний..."></textarea>
-        </div>
-
-        <button type="submit" id="submitBtn" class="submit-btn">Зафиксировать в Реестре</button>
-    </form>
+    <!-- Контейнер чек-листа -->
+    <div id="checklist-container" style="display:none;">
+        <div id="questions"></div>
+        <button onclick="submitAudit()" class="btn btn-primary" style="background: #27ae60; margin-top: 20px;">Отправить отчет в Журнал</button>
+    </div>
 </div>
 
 <script>
-    // ВСТАВЬТЕ СЮДА ВАШ URL РАЗВЕРТЫВАНИЯ ИЗ GOOGLE APPS SCRIPT
+    // ⚠️ Вставьте сюда URL вашего развернутого макроса (веб-приложения) Google Apps Script
     const API_URL = "https://script.google.com/macros/s/AKfycbzwk-PMOf4_RuDLWCcExDDCDpUdh7ET4kpAE_II5HK2e3UJKYEOhI3eXT8FoeCUM5Nd/exec"; 
     
-    let dbObjects = [];
-    let selectedStatus = "";
+    let auditData = { inspector: '', results: [] };
 
-    // 1. Автоматическая загрузка объектов при старте страницы
-    window.addEventListener('DOMContentLoaded', async () => {
+    // Экранирование строк для безопасной вставки в onclick
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    async function startAudit() {
+        const inspectorInput = document.getElementById('inspector').value.trim();
+        const facilityInput = document.getElementById('facility').value.trim();
+        
+        if(!inspectorInput || !facilityInput) {
+            alert("Пожалуйста, заполните ФИО и Объект проверки.");
+            return;
+        }
+
+        auditData.inspector = inspectorInput;
+        // Запоминаем объект, если нужно будет использовать его глобально, 
+        // но также сохраняем оригинальный объект контроля из таблицы для каждой строки.
+
+        document.getElementById('setup-form').style.display = 'none';
+        const container = document.getElementById('questions');
+        container.innerHTML = "<div class="loading">Синхронизация с базой данных Google Таблиц...</div>";
+        document.getElementById('checklist-container').style.display = 'block';
+
         try {
-            const response = await fetch(API_URL);
-            dbObjects = await response.json();
-            
-            if(dbObjects.error) throw new Error(dbObjects.error);
-
-            const select = document.getElementById('objectSelect');
-            dbObjects.forEach(obj => {
-                let opt = document.createElement('option');
-                opt.value = obj.id;
-                opt.textContent = obj.name;
-                select.appendChild(opt);
+            // Запрос данных с обязательным параметром ведения редиректов (CORS Bypass)
+            const response = await fetch(API_URL, {
+                method: "GET",
+                redirect: "follow"
             });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || "Неизвестная ошибка сервера");
+            }
 
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('auditForm').style.display = 'block';
+            const questions = result.data;
+            container.innerHTML = ""; 
+            
+            if (questions.length === 0) {
+                container.innerHTML = "<p class='loading'>База данных пуста. Заполните вкладку 'Реестр'.</p>";
+                return;
+            }
+
+            questions.forEach(q => {
+                const safeObject = escapeHtml(q.controlObject);
+                const safeQuestion = escapeHtml(q.question);
+                
+                container.innerHTML += `
+                    <div class="card" id="q-box-${q.id}">
+                        <div class="badge">Объект: ${safeObject}</div>
+                        <p style="margin: 5px 0 12px 0; font-size: 16px; line-height: 1.4;">${safeQuestion}</p>
+                        ${q.normative ? `<div class="normative-text"><b>Норматив:</b> \${escapeHtml(q.normative)}</div>` : ''}
+                        
+                        <div style="margin-top:15px;">
+                            <button type="button" class="btn btn-success" onclick="setResult(${q.id}, 'Норма', '${safeObject}', '${safeQuestion}')">Соответствует</button>
+                            <button type="button" class="btn btn-danger" onclick="setResult(${q.id}, 'Нарушение', '${safeObject}', '${safeQuestion}')">Нарушение</button>
+                        </div>
+                        <input type="text" id="comment-${q.id}" class="comment-box" placeholder="Опишите нарушение, дефекты или сроки...">
+                    </div>
+                `;
+            });
         } catch (error) {
-            document.getElementById('loader').innerHTML = `<span style="color:red">Ошибка синхронизации данных: ${error.message}. Проверьте URL скрипта и доступы.</span>`;
-        }
-    });
-
-    // 2. Интерактивное отображение метаданных объекта (адрес, ответственный)
-    function showObjectDetails() {
-        const id = document.getElementById('objectSelect').value;
-        const infoDiv = document.getElementById('object-info');
-        if(!id) { infoDiv.style.display = 'none'; return; }
-
-        const currentObj = dbObjects.find(o => o.id == id);
-        if(currentObj) {
-            infoDiv.innerHTML = `<strong>Адрес:</strong> ${currentObj.address || 'Не указан'}<br><strong>Ответственный на объекте:</strong> ${currentObj.responsible || 'Не указан'}`;
-            infoDiv.style.display = 'block';
+            console.error("Критическая ошибка:", error);
+            container.innerHTML = `
+                <div class="card" style="border-left-color:var(--danger); color:var(--danger);">
+                    <b>Ошибка синхронизации данных:</b> ${error.message}<br><br>
+                    <small>Убедитесь, что скрипт развернут как "Новая версия", а в доступе выставлено "Все (Anyone)".</small>
+                </div>`;
         }
     }
 
-    // 3. Выбор статуса проверки
-    function setStatus(statusText, type) {
-        selectedStatus = statusText;
-        const okBtn = document.getElementById('status-ok');
-        const failBtn = document.getElementById('status-fail');
-        const commentsField = document.getElementById('comments');
-
-        if(type === 'ok') {
-            okBtn.className = 'status-btn active-success';
-            failBtn.className = 'status-btn';
-            commentsField.required = false;
+    function setResult(id, status, controlObject, question) {
+        let item = auditData.results.find(r => r.id === id);
+        if (!item) {
+            item = { id: id, controlObject: controlObject, question: question, status: status, comment: '' };
+            auditData.results.push(item);
         } else {
-            failBtn.className = 'status-btn active-danger';
-            okBtn.className = 'status-btn';
-            commentsField.required = true; // Делаем комментарий обязательным при нарушениях
+            item.status = status;
         }
+        
+        const commentInput = document.getElementById(`comment-${id}`);
+        if (commentInput) {
+            commentInput.style.display = status === 'Нарушение' ? 'block' : 'none';
+        }
+        
+        // Визуальная цветовая индикация состояния карточки
+        const card = document.getElementById(`q-box-${id}`);
+        card.style.borderLeftColor = status === 'Норма' ? 'var(--success)' : 'var(--danger)';
     }
 
-    // 4. Отправка данных формы в Google Реестр
     async function submitAudit() {
-    if (auditData.results.length === 0) {
-        alert("Вы не ответили ни на один вопрос!");
-        return;
-    }
+        if (auditData.results.length === 0) {
+            alert("Вы не ответили ни на один вопрос из чек-листа!");
+            return;
+        }
 
-    const submitBtn = document.querySelector('#checklist-container button');
-    submitBtn.disabled = true;
-    submitBtn.innerText = "Отправка данных...";
-
-    try {
-        // Используем text/plain для обхода жестких ограничений CORS в Google Apps Script
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(auditData),
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
+        // Синхронизируем написанные комментарии из инпутов в финальный массив данных
+        auditData.results.forEach(item => {
+            const commentInput = document.getElementById(`comment-${item.id}`);
+            if (commentInput) {
+                item.comment = commentInput.value.trim();
             }
         });
 
-        // Так как Google делает редиректы, ответ может быть непрозрачным,
-        // но при правильной настройке данные гарантированно запишутся.
-        alert('Проверка успешно завершена! Данные сохранены в Google Таблицу во вкладку "Журнал_Проверок".');
-        location.reload();
+        const submitBtn = document.querySelector('#checklist-container button[onclick="submitAudit()"]');
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Идет запись результатов...";
 
-    } catch (error) {
-        console.error("Ошибка:", error);
-        alert("Произошла ошибка при сохранении данных. Проверьте консоль браузера (F12).");
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Отправить отчет в реестр";
+        try {
+            // Отправка методом POST с типом text/plain гарантирует обход CORS политик в Google Apps Script
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(auditData),
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                }
+            });
+
+            alert('Проверка успешно завершена! Данные сохранены в таблицу во вкладку "Журнал_Проверок".');
+            location.reload();
+
+        } catch (error) {
+            console.error("Ошибка сохранения данных:", error);
+            alert("Произошла ошибка отправки. Проверьте соединение с сетью или консоль браузера (F12).");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Отправить отчет в Журнал";
+        }
     }
-}
-
 </script>
 </body>
 </html>
