@@ -3,191 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Инспекция по Охране Труда</title>
-    <style>
-        :root {
-            --primary: #34495e;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --gray: #bdc3c7;
-            --bg: #f4f6f9;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 20px; background: var(--bg); color: #333; margin: 0; }
-        .container { max-width: 650px; margin: 0 auto; }
-        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
-        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--gray); transition: all 0.2s ease; }
-        input[type="text"] { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid var(--gray); border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; transition: opacity 0.2s; }
-        .btn:hover { opacity: 0.9; }
-        .btn:disabled { background: var(--gray) !important; cursor: not-allowed; }
-        .btn-success { background: var(--success); color: white; margin-right: 10px; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; padding: 14px; font-size: 16px; }
-        .comment-box { display: none; margin-top: 12px; }
-        .badge { display: inline-block; background: #e8edf2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 8px; }
-        .normative-text { font-size: 13px; color: #7f8c8d; margin-top: 8px; background: #fafafa; padding: 8px; border-radius: 4px; border-left: 3px solid #3498db; }
-        .loading { text-align: center; font-style: italic; color: #7f8c8d; padding: 20px; }
-    </style>
+    <title>Инспекция по Охране Труда и ПБ</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-    <h2>📋 Контроль Охраны Труда</h2>
+    <h2>📋 Контроль Охраны Труда и ПБ</h2>
     
-    <!-- Форма авторизации инспектора -->
-    <div id="setup-form" class="card" style="border-left-color: var(--primary);">
-        <label for="inspector"><b>ФИО Проверяющего:</b></label>
-        <input type="text" id="inspector" placeholder="Иванов Иван Иванович">
+    <!-- ШАГ 1: Авторизация инспектора, выбор Объекта и Подрядчика -->
+    <div id="step-1-form" class="card primary-border">
+        <div class="loading-overlay" id="setup-loading">Загрузка справочников из Google Таблиц...</div>
         
-        <label for="facility"><b>Подразделение / Объект проверки:</b></label>
-        <input type="text" id="facility" placeholder="Цех №1, Склад ГСМ и т.д.">
-        
-        <button onclick="startAudit()" class="btn btn-primary">Начать аудит</button>
+        <div id="form-fields-wrapper" style="display:none;">
+            <label for="inspector"><b>ФИО Проверяющего сотрудника:</b></label>
+            <input type="text" id="inspector" placeholder="Например, Хлыстунов П.А.">
+            
+            <label for="object-select"><b>Объект строительства (Лист 1_Объекты):</b></label>
+            <select id="object-select">
+                <option value="">-- Выберите объект из списка --</option>
+            </select>
+            
+            <label for="contractor-select"><b>Подрядная организация (Лист 2_Подрядчики):</b></label>
+            <select id="contractor-select">
+                <option value="">-- Выберите подрядчика --</option>
+            </select>
+            
+            <button onclick="goToStep2()" class="btn btn-primary" style="margin-top: 15px; width: 100%;">Далее к выбору чек-листа →</button>
+        </div>
     </div>
 
-    <!-- Контейнер чек-листа -->
-    <div id="checklist-container" style="display:none;">
-        <div id="questions"></div>
-        <button onclick="submitAudit()" class="btn btn-primary" style="background: #27ae60; margin-top: 20px;">Отправить отчет в Журнал</button>
+    <!-- ШАГ 2: Выбор конкретного списка вопросов (3_Чек_лист) -->
+    <div id="step-2-form" class="card primary-border" style="display:none;">
+        <h3>Выбор раздела чек-листа</h3>
+        <p class="meta-info">Объект: <span id="meta-obj"></span> | Подрядчик: <span id="meta-contr"></span></p>
+        
+        <label for="category-select"><b>Выберите направление проверки (Лист 3_Чек_лист):</b></label>
+        <select id="category-select">
+            <option value="">-- Загрузить все вопросы --</option>
+        </select>
+        
+        <div style="margin-top: 25px; display: flex; gap: 10px;">
+            <button onclick="backToStep1()" class="btn btn-secondary">← Назад</button>
+            <button onclick="startAudit()" class="btn btn-primary" style="flex: 1;">Начать аудит 🚀</button>
+        </div>
+    </div>
+
+    <!-- ШАГ 3: Экран прохождения чек-листа -->
+    <div id="step-3-checklist" style="display:none;">
+        <div class="audit-header card">
+            <p>👤 <b>Инспектор:</b> <span id="audit-meta-insp"></span></p>
+            <p>🏗️ <b>Объект:</b> <span id="audit-meta-obj"></span></p>
+            <p>🚜 <b>Подрядчик:</b> <span id="audit-meta-contr"></span></p>
+            <p>📂 <b>Раздел:</b> <span id="audit-meta-cat"></span></p>
+        </div>
+        
+        <!-- Сюда JS сгенерирует карточки с вопросами -->
+        <div id="questions-container"></div>
+        
+        <div style="margin-top: 25px; display: flex; gap: 10px;">
+            <button onclick="backToStep2()" class="btn btn-secondary">Изменить раздел</button>
+            <button onclick="submitAudit()" id="submit-btn" class="btn btn-primary" style="background: #27ae60; flex: 1;">Сохранить аудит в Google Таблицу</button>
+        </div>
     </div>
 </div>
 
-<script>
-    // ⚠️ Вставьте сюда URL вашего развернутого макроса (веб-приложения) Google Apps Script
-    const API_URL = "https://script.google.com/macros/s/AKfycbzwk-PMOf4_RuDLWCcExDDCDpUdh7ET4kpAE_II5HK2e3UJKYEOhI3eXT8FoeCUM5Nd/exec"; 
-    
-    let auditData = { inspector: '', results: [] };
-
-    // Экранирование строк для безопасной вставки в onclick
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-
-    async function startAudit() {
-        const inspectorInput = document.getElementById('inspector').value.trim();
-        const facilityInput = document.getElementById('facility').value.trim();
-        
-        if(!inspectorInput || !facilityInput) {
-            alert("Пожалуйста, заполните ФИО и Объект проверки.");
-            return;
-        }
-
-        auditData.inspector = inspectorInput;
-        // Запоминаем объект, если нужно будет использовать его глобально, 
-        // но также сохраняем оригинальный объект контроля из таблицы для каждой строки.
-
-        document.getElementById('setup-form').style.display = 'none';
-        const container = document.getElementById('questions');
-        container.innerHTML = "<div class="loading">Синхронизация с базой данных Google Таблиц...</div>";
-        document.getElementById('checklist-container').style.display = 'block';
-
-        try {
-            // Запрос данных с обязательным параметром ведения редиректов (CORS Bypass)
-            const response = await fetch(API_URL, {
-                method: "GET",
-                redirect: "follow"
-            });
-            
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error(result.error || "Неизвестная ошибка сервера");
-            }
-
-            const questions = result.data;
-            container.innerHTML = ""; 
-            
-            if (questions.length === 0) {
-                container.innerHTML = "<p class='loading'>База данных пуста. Заполните вкладку 'Реестр'.</p>";
-                return;
-            }
-
-            questions.forEach(q => {
-                const safeObject = escapeHtml(q.controlObject);
-                const safeQuestion = escapeHtml(q.question);
-                
-                container.innerHTML += `
-                    <div class="card" id="q-box-${q.id}">
-                        <div class="badge">Объект: ${safeObject}</div>
-                        <p style="margin: 5px 0 12px 0; font-size: 16px; line-height: 1.4;">${safeQuestion}</p>
-                        ${q.normative ? `<div class="normative-text"><b>Норматив:</b> \${escapeHtml(q.normative)}</div>` : ''}
-                        
-                        <div style="margin-top:15px;">
-                            <button type="button" class="btn btn-success" onclick="setResult(${q.id}, 'Норма', '${safeObject}', '${safeQuestion}')">Соответствует</button>
-                            <button type="button" class="btn btn-danger" onclick="setResult(${q.id}, 'Нарушение', '${safeObject}', '${safeQuestion}')">Нарушение</button>
-                        </div>
-                        <input type="text" id="comment-${q.id}" class="comment-box" placeholder="Опишите нарушение, дефекты или сроки...">
-                    </div>
-                `;
-            });
-        } catch (error) {
-            console.error("Критическая ошибка:", error);
-            container.innerHTML = `
-                <div class="card" style="border-left-color:var(--danger); color:var(--danger);">
-                    <b>Ошибка синхронизации данных:</b> ${error.message}<br><br>
-                    <small>Убедитесь, что скрипт развернут как "Новая версия", а в доступе выставлено "Все (Anyone)".</small>
-                </div>`;
-        }
-    }
-
-    function setResult(id, status, controlObject, question) {
-        let item = auditData.results.find(r => r.id === id);
-        if (!item) {
-            item = { id: id, controlObject: controlObject, question: question, status: status, comment: '' };
-            auditData.results.push(item);
-        } else {
-            item.status = status;
-        }
-        
-        const commentInput = document.getElementById(`comment-${id}`);
-        if (commentInput) {
-            commentInput.style.display = status === 'Нарушение' ? 'block' : 'none';
-        }
-        
-        // Визуальная цветовая индикация состояния карточки
-        const card = document.getElementById(`q-box-${id}`);
-        card.style.borderLeftColor = status === 'Норма' ? 'var(--success)' : 'var(--danger)';
-    }
-
-    async function submitAudit() {
-        if (auditData.results.length === 0) {
-            alert("Вы не ответили ни на один вопрос из чек-листа!");
-            return;
-        }
-
-        // Синхронизируем написанные комментарии из инпутов в финальный массив данных
-        auditData.results.forEach(item => {
-            const commentInput = document.getElementById(`comment-${item.id}`);
-            if (commentInput) {
-                item.comment = commentInput.value.trim();
-            }
-        });
-
-        const submitBtn = document.querySelector('#checklist-container button[onclick="submitAudit()"]');
-        submitBtn.disabled = true;
-        submitBtn.innerText = "Идет запись результатов...";
-
-        try {
-            // Отправка методом POST с типом text/plain гарантирует обход CORS политик в Google Apps Script
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(auditData),
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8'
-                }
-            });
-
-            alert('Проверка успешно завершена! Данные сохранены в таблицу во вкладку "Журнал_Проверок".');
-            location.reload();
-
-        } catch (error) {
-            console.error("Ошибка сохранения данных:", error);
-            alert("Произошла ошибка отправки. Проверьте соединение с сетью или консоль браузера (F12).");
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Отправить отчет в Журнал";
-        }
-    }
-</script>
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
